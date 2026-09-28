@@ -1,0 +1,4 @@
+Sincronização de junção: ok nos dois.
+Memória compartilhada: sim, o struct/objeto Classes e atrbutos semester_registry e num_students_per_class.
+Condição de corrida: Em tese sim, mas graças ao particionamento por class_id/student_id, não ocorre. Pode haver em inserir chaves em um dict compartilhado 
+a partir de múltiplas threads sem lock deixa de ser seguro por padrão em Python, mas em C não ocorre pois o array é pre-populado.

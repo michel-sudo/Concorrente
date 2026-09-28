@@ -24,7 +24,6 @@ typedef struct {
     char *professors[2];
     int class_ids[MAX_CLASSES];
     double highest_grade[MAX_CLASSES];
-    char highest_grade_student[MAX_CLASSES][16];
 } Classes;
 
 /* Generate random student ID */
@@ -93,7 +92,6 @@ void process_grades(Classes *c, int class_id) {
 
         if (grade > c->highest_grade[idx]) {
             c->highest_grade[idx] = grade;
-            strcpy(c->highest_grade_student[idx], s->student_id);
         }
 
         printf("%s corrected Student %s from class %d - Grade: %.2f\n", professor, s->student_id, class_id, grade);
@@ -133,7 +131,6 @@ void init_classes(Classes *c, int num_classes, int num_students_per_class) {
     for (int i = 0; i < num_classes; i++) {
         c->class_ids[i] = i + 1;
         c->highest_grade[i] = -1.0;
-        strcpy(c->highest_grade_student[i], "N/A");
     }
     init_registry(c);
 }
