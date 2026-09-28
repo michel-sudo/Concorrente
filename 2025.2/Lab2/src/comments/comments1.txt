@@ -1,0 +1,5 @@
+Em ambas as linguagens, ao executar o primeiro laço na função principal, as funções de processamento das notas são iniciadas. Porém na solução serial, a cada
+iteração, é necessário esperar pela conclusão do processamento das notas de todos os alunos de cada turma, para prosseguir para o processamento da proxima
+turma, ou seja, em uma sequência, oque possui um custo de tempo significativo.
+
+

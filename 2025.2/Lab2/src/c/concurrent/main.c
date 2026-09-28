@@ -23,6 +23,8 @@ typedef struct {
     Student registry[MAX_STUDENTS];
     char *professors[2];
     int class_ids[MAX_CLASSES];
+    double highest_grade[MAX_CLASSES];
+    char highest_grade_student[MAX_CLASSES][16];
 } Classes;
 
 /* Generate random student ID */
@@ -78,6 +80,8 @@ void process_grades(Classes *c, int class_id) {
     Student *students[MAX_STUDENTS];
     int count = get_students_in_class(c, class_id, students);
 
+    int idx = class_id - 1;
+
     for (int i = 0; i < count; i++) {
         Student *s = students[i];
         fflush(stdout);
@@ -86,6 +90,11 @@ void process_grades(Classes *c, int class_id) {
         double grade = generate_student_grade();
         s->final_grade = grade;
         s->has_grade = 1;
+
+        if (grade > c->highest_grade[idx]) {
+            c->highest_grade[idx] = grade;
+            strcpy(c->highest_grade_student[idx], s->student_id);
+        }
 
         printf("%s corrected Student %s from class %d - Grade: %.2f\n", professor, s->student_id, class_id, grade);
         fflush(stdout);
@@ -100,6 +109,7 @@ void registry_to_string(Classes *c, int class_id) {
     const char *professor = c->professors[(class_id - 1) % 2];
     Student *students[MAX_STUDENTS];
     int count = get_students_in_class(c, class_id, students);
+    int idx = class_id - 1;
 
     printf("\n*********** %s's Class %d ***********\n", professor,class_id);
     for (int i = 0; i < count; i++) {
@@ -110,6 +120,8 @@ void registry_to_string(Classes *c, int class_id) {
         else
             printf("None\n");
     }
+
+    printf("Highest grade: %.2f\n", c->highest_grade[idx]);
 }
 
 /* Initialize Classes structure */
@@ -120,6 +132,8 @@ void init_classes(Classes *c, int num_classes, int num_students_per_class) {
     c->professors[1] = "Prof2";
     for (int i = 0; i < num_classes; i++) {
         c->class_ids[i] = i + 1;
+        c->highest_grade[i] = -1.0;
+        strcpy(c->highest_grade_student[i], "N/A");
     }
     init_registry(c);
 }
@@ -166,6 +180,10 @@ int main(int argc, char *argv[]) {
         args[i].classes_ptr = &semester;
         args[i].class_id = semester.class_ids[i];
         pthread_create(&threads[i], NULL, process_grades_thread, &args[i]);
+    }
+
+    for (int i = 0; i < semester.num_classes; i++) {
+        pthread_join(threads[i], NULL);
     }
 
     for (int i = 0; i < semester.num_classes; i++) {
