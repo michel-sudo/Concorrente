@@ -1,0 +1,1 @@
+Não houve diferença na ordem de execução das correções. A execução é feita de forma sequêncial.

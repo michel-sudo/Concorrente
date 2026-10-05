@@ -1,0 +1,3 @@
+Sim, a classe Classes e seu atributos, em python, assim como a estrutura Classes em C, são compartilhados entre threads mãe e filhas.
+
+Mesmo compartilhando os espaços de memória como o array ou Dicionário high_grades, não deve ocorrer uma condição de corrida, pois o acesso a estas estruturas é feito de forma controlada, de forma que, cada index corresponde a classe associada a maior nota, assim cada thread acessa o array ou Dicionário de forma controlada. Portanto não deve haver problemas graves com a solução desenvolvida.
