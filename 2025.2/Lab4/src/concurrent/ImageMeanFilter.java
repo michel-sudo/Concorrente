@@ -27,9 +27,11 @@ public class ImageMeanFilter {
      * @param inputPath  Path to input image
      * @param outputPath Path to output image 
      * @param kernelSize Size of mean kernel
+     * @param numThreads Number of threads
      * @throws IOException If there is an error reading/writing
      */
-    public static void applyMeanFilter(String inputPath, String outputPath, int kernelSize) throws IOException {
+    public static void applyMeanFilter(String inputPath, String outputPath, int kernelSize, int numThreads)
+            throws IOException, InterruptedException {
         // Load image
         BufferedImage originalImage = ImageIO.read(new File(inputPath));
         
@@ -40,23 +42,47 @@ public class ImageMeanFilter {
             BufferedImage.TYPE_INT_RGB
         );
         
-        // Image processing
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
-        // Process each pixel
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // Calculate neighborhood average
-                int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
-                
-                // Set filtered pixel
-                filteredImage.setRGB(x, y, 
-                    (avgColor[0] << 16) | 
-                    (avgColor[1] << 8)  | 
-                    avgColor[2]
-                );
-            }
+
+        // Cada thread processa uma faixa de linhas e guarda seus próprios contadores
+        // (assim não há condição de corrida nem necessidade de lock).
+        Thread[] threads = new Thread[numThreads];
+        long[] changed = new long[numThreads];
+        long[] unchanged = new long[numThreads];
+        int rowsPerThread = (height + numThreads - 1) / numThreads;
+
+        for (int t = 0; t < numThreads; t++) {
+            final int id = t;
+            final int startY = t * rowsPerThread;
+            final int endY = Math.min(height, startY + rowsPerThread);
+            threads[t] = new Thread(() -> {
+                for (int y = startY; y < endY; y++) {
+                    for (int x = 0; x < width; x++) {
+                        int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
+                        int newRgb = (avgColor[0] << 16) | (avgColor[1] << 8) | avgColor[2];
+                        int oldRgb = originalImage.getRGB(x, y) & 0xFFFFFF;
+
+                        // Pixels diferentes por thread: escrita segura
+                        filteredImage.setRGB(x, y, newRgb);
+
+                        if (newRgb != oldRgb) changed[id]++;
+                        else unchanged[id]++;
+                    }
+                }
+            });
+            threads[t].start();
         }
+
+        long totalChanged = 0, totalUnchanged = 0;
+        for (int t = 0; t < numThreads; t++) {
+            threads[t].join();
+            totalChanged += changed[t];
+            totalUnchanged += unchanged[t];
+        }
+
+        System.out.println("Pixels alterados: " + totalChanged);
+        System.out.println("Pixels iguais: " + totalUnchanged);
         
         // Save filtered image
         ImageIO.write(filteredImage, "jpg", new File(outputPath));
@@ -129,15 +155,20 @@ public class ImageMeanFilter {
      * using a 7x7 mean filter kernel
      */
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("Usage: java ImageMeanFilter <input_file>");
+        if (args.length < 2) {
+            System.err.println("Usage: java ImageMeanFilter <input_file> <num_threads>");
             System.exit(1);
         }
 
         String inputFile = args[0];
+        int numThreads = Integer.parseInt(args[1]);
+        if (numThreads < 2) {
+            System.err.println("O número de threads deve ser pelo menos 2.");
+            System.exit(1);
+        }
         try {
-            applyMeanFilter(inputFile, "filtered_output.jpg", 7);
-        } catch (IOException e) {
+            applyMeanFilter(inputFile, "filtered_output.jpg", 7, numThreads);
+        } catch (IOException | InterruptedException e) {
             System.err.println("Error processing image: " + e.getMessage());
         }
     }
