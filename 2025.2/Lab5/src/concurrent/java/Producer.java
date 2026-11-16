@@ -1,4 +1,4 @@
-class Producer {
+class Producer extends Thread{
     private final Buffer buffer;
     private final int maxItems;
     private final int sleepTime;
@@ -22,5 +22,10 @@ class Producer {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    @Override
+    public void run() {
+        produce();
     }
 }

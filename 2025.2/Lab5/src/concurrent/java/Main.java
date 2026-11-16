@@ -10,17 +10,43 @@ public class Main {
         int producingTime = Integer.parseInt(args[2]);
         int numConsumers = Integer.parseInt(args[3]);
         int consumingTime = Integer.parseInt(args[4]);
+        Consumer[] thConsumers = new Consumer[numConsumers];
+        Producer[] thProducers = new Producer[numProducers];
         
         Buffer buffer = new Buffer();
-        
-        for (int i = 1; i <= numProducers; i++) {
-            Producer producer = new Producer(i, buffer, maxItemsPerProducer, producingTime);
-            producer.produce();
+
+        int i = 0;
+        while (i < Math.max(numConsumers, numProducers)){
+            if (i < numProducers){
+                Producer producer = new Producer(i + 1, buffer, maxItemsPerProducer, producingTime);
+                producer.start();
+                thProducers[i] = producer;
+            }
+
+            if (i < numConsumers) {
+                Consumer consumer = new Consumer(i + 1, buffer, consumingTime);
+                consumer.start();
+                thConsumers[i] = consumer;
+            }
+            i++;
         }
+
+        for (Producer p : thProducers) {
+            try {
+                p.join();
+            } catch (InterruptedException io) {
+                System.err.println();
+            }
+        }
+
+        for (int j = 0; j < numConsumers; j++) buffer.put(-1);
         
-        for (int i = 1; i <= numConsumers; i++) {
-            Consumer consumer = new Consumer(i, buffer, consumingTime);
-            consumer.process();
+        for (Consumer c : thConsumers) {
+            try {
+                c.join();
+            } catch (InterruptedException io) {
+                System.err.println();
+            }
         }
     }
 }
