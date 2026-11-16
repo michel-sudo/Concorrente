@@ -1,0 +1,13 @@
+Analise das execucoes (versao concorrente: buffer circular de 50 posicoes, semaforos empty/full/mutex)
+
+Em todos os cenarios, o numero de itens inseridos = removidos = consumidos (produtores x itens), sem perdas ou duplicacoes, e o programa termina.
+
+1) 1 produtor (150ms) e 1 consumidor (150ms): ritmos iguais; o buffer fica com 0 ou 1 item. Sistema equilibrado.
+
+2) 5 produtores (10ms) e 1 consumidor (100ms): produtores muito mais rapidos. O buffer enche e chega a 50 (limite respeitado); os produtores bloqueiam em empty.acquire() ate o consumidor liberar uma vaga. O consumidor e o gargalo e o tempo total e ditado por ele.
+
+3) 1 produtor (100ms) e 5 consumidores (10ms): consumidores muito mais rapidos. O buffer fica quase sempre vazio (tamanho 0-1) e os consumidores ficam bloqueados em full.acquire() esperando itens. O produtor e o gargalo; adicionar consumidores nao acelera o sistema.
+
+4) 3 produtores (20ms) e 4 consumidores (20ms): ritmos parecidos; buffer com poucos itens, boa vazao e varios produtores/consumidores trabalhando ao mesmo tempo sem condicao de corrida.
+
+Conclusao: a vazao e limitada pelo lado mais lento. Buffer cheio bloqueia produtores; buffer vazio bloqueia consumidores. O semaforo mutex garante acesso exclusivo ao buffer. Para terminar, a Main espera os produtores e insere um valor sentinela (-1) por consumidor.
